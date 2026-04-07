@@ -3,8 +3,16 @@
 import { supabase } from '../../supabaseClient'
 import { useState, useEffect } from 'react'
 
+interface Ticket {
+  id: number
+  title: string
+  description: string
+  status: string
+  created_at: string
+}
+
 export default function Home() {
-  const [tickets, setTickets] = useState([])
+  const [tickets, setTickets] = useState<Ticket[]>([])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
 
