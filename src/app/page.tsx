@@ -75,8 +75,8 @@ export default function Home() {
   const createTicket = async (e: React.FormEvent<HTMLFormElement>) => {
     // Prevent the default form submission behavior
     e.preventDefault()
-    // Insert a new ticket into the 'tickets' table with title, description, and a default status of 'open'
-    const { data, error } = await supabase.from('tickets').insert([{ title, description, status: 'open' }])
+    // Insert a new ticket into the 'tickets' table with title, description, status, and user_id
+    const { data, error } = await supabase.from('tickets').insert([{ title, description, status: 'open', user_id: user?.id }])
     // Log any errors that occur during insertion
     if (error) console.error('Error creating ticket:', error)
     // On success, clear the form inputs and refresh the ticket list
