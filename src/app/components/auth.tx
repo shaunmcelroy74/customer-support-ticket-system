@@ -1,0 +1,79 @@
+'use client'
+
+import { useState } from 'react'
+import { supabase } from '../../../supabaseClient'
+import type { User } from '@supabase/supabase-js'
+
+interface AuthProps {
+  setUser: (user: User | null) => void
+}
+
+export default function Auth({ setUser }: AuthProps) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLogin, setIsLogin] = useState(true)
+  const [errorMsg, setErrorMsg] = useState('')
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setErrorMsg('')
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) setErrorMsg(error.message)
+    else setUser(data.user)
+  }
+
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setErrorMsg('')
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) setErrorMsg(error.message)
+    else {
+      alert('Signup successful! Please check your email for verification.')
+      setEmail('')
+      setPassword('')
+    }
+  }
+
+  return (
+    <div className="p-4 border rounded shadow-sm max-w-md">
+      <div className="mb-4">
+        <button
+          onClick={() => setIsLogin(true)}
+          className={`mr-2 px-4 py-2 rounded border ${isLogin ? 'bg-blue-500 text-white' : 'bg-white text-black'}`}
+        >
+          Login
+        </button>
+        <button
+          onClick={() => setIsLogin(false)}
+          className={`px-4 py-2 rounded border ${!isLogin ? 'bg-blue-500 text-white' : 'bg-white text-black'}`}
+        >
+          Signup
+        </button>
+      </div>
+
+      <form onSubmit={isLogin ? handleLogin : handleSignup}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border p-2 mb-2 w-full"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="border p-2 mb-2 w-full"
+          required
+        />
+        <button type="submit" className="bg-white text-black px-4 py-2 rounded border border-black w-full">
+          {isLogin ? 'Login' : 'Signup'}
+        </button>
+      </form>
+
+      {errorMsg && <p className="text-red-500 mt-2">{errorMsg}</p>}
+    </div>
+  )
+}
