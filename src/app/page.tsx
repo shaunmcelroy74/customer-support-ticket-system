@@ -103,6 +103,8 @@ export default function Home() {
 
       {/* Section header for the tickets list */}
       <h2 className="text-xl font-semibold mb-2">Tickets</h2>
+      {/* Show loading message while fetching tickets */}
+      {loading && <p>Loading...</p>}
       {/* Unordered list to display all tickets */}
       <ul>
         {/* Map over the tickets array to render each ticket */}
