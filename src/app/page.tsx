@@ -119,7 +119,7 @@ export default function Home() {
       <ul>
         {/* Map over the tickets array to render each ticket */}
         {tickets.map((ticket) => (
-          <li key={ticket.id} className="border p-2 mb-2">
+          <li key={ticket.id} className="border p-3 mb-2 rounded shadow-sm">
             {/* Display ticket title in bold, followed by description */}
             <strong>{ticket.title}</strong>: {ticket.description}
             {/* Dropdown to change the ticket status */}
