@@ -39,7 +39,7 @@ export default function Home() {
   }
 
   // Function to handle ticket creation form submission
-  const createTicket = async (e) => {
+  const createTicket = async (e: React.FormEvent<HTMLFormElement>) => {
     // Prevent the default form submission behavior
     e.preventDefault()
     // Insert a new ticket into the 'tickets' table with title and description
