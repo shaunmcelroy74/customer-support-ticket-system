@@ -31,7 +31,7 @@ export default function Home() {
   // Function to fetch all tickets from the Supabase database
   const fetchTickets = async () => {
     // Query the 'tickets' table to select all records
-    const { data, error } = await supabase.from('tickets').select('*')
+    const { data, error } = await supabase.from('tickets').select('*').order('created_at', { ascending: false })
     // Log any errors that occur during fetching
     if (error) console.error('Error fetching tickets:', error)
     // Update the tickets state with the fetched data
