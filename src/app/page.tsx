@@ -70,6 +70,16 @@ export default function Home() {
     else fetchTickets()
   }
 
+  // Function to delete a ticket from the database
+  const deleteTicket = async (ticketId: number) => {
+    // Delete the ticket from the 'tickets' table where the id matches ticketId
+    const { error } = await supabase.from('tickets').delete().eq('id', ticketId)
+    // Log any errors that occur during deletion
+    if (error) console.error('Error deleting ticket:', error)
+    // On success, refresh the ticket list to reflect the change
+    else fetchTickets()
+  }
+
   // Render the UI
   return (
     // Main container with padding
@@ -123,6 +133,13 @@ export default function Home() {
               <option value="in-progress">In Progress</option>
               <option value="resolved">Resolved</option>
             </select>
+            {/* Delete button to remove the ticket */}
+            <button
+              onClick={() => deleteTicket(ticket.id)}
+              className="ml-2 bg-red-500 text-white px-2 py-1 rounded"
+            >
+              Delete
+            </button>
           </li>
         ))}
       </ul>
