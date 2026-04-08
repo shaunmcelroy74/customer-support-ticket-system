@@ -22,6 +22,8 @@ export default function Home() {
   const [title, setTitle] = useState('')
   // State for the description input in the ticket creation form
   const [description, setDescription] = useState('')
+  // State to indicate if data is currently being loaded
+  const [loading, setLoading] = useState(false)
 
   // useEffect hook to fetch tickets when the component mounts
   useEffect(() => {
@@ -30,12 +32,16 @@ export default function Home() {
 
   // Function to fetch all tickets from the Supabase database
   const fetchTickets = async () => {
+    // Set loading to true while fetching data
+    setLoading(true)
     // Query the 'tickets' table to select all records
     const { data, error } = await supabase.from('tickets').select('*').order('created_at', { ascending: false })
     // Log any errors that occur during fetching
     if (error) console.error('Error fetching tickets:', error)
     // Update the tickets state with the fetched data
     else setTickets(data)
+    // Set loading to false after fetching completes
+    setLoading(false)
   }
 
   // Function to handle ticket creation form submission
