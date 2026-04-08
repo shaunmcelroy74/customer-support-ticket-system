@@ -42,8 +42,8 @@ export default function Home() {
   const createTicket = async (e: React.FormEvent<HTMLFormElement>) => {
     // Prevent the default form submission behavior
     e.preventDefault()
-    // Insert a new ticket into the 'tickets' table with title and description
-    const { data, error } = await supabase.from('tickets').insert([{ title, description }])
+    // Insert a new ticket into the 'tickets' table with title, description, and a default status of 'open'
+    const { data, error } = await supabase.from('tickets').insert([{ title, description, status: 'open' }])
     // Log any errors that occur during insertion
     if (error) console.error('Error creating ticket:', error)
     // On success, clear the form inputs and refresh the ticket list
@@ -52,6 +52,16 @@ export default function Home() {
       setDescription('')
       fetchTickets()
     }
+  }
+
+  // Function to update a ticket's status in the database
+  const updateTicketStatus = async (ticketId: number, newStatus: string) => {
+    // Update the 'tickets' table where the id matches ticketId, setting the new status
+    const { error } = await supabase.from('tickets').update({ status: newStatus }).eq('id', ticketId)
+    // Log any errors that occur during the update
+    if (error) console.error('Error updating ticket status:', error)
+    // On success, refresh the ticket list to reflect the change
+    else fetchTickets()
   }
 
   // Render the UI
@@ -92,8 +102,19 @@ export default function Home() {
         {/* Map over the tickets array to render each ticket */}
         {tickets.map((ticket) => (
           <li key={ticket.id} className="border p-2 mb-2">
-            {/* Display ticket title in bold, followed by description and status */}
-            <strong>{ticket.title}</strong>: {ticket.description} (Status: {ticket.status})
+            {/* Display ticket title in bold, followed by description */}
+            <strong>{ticket.title}</strong>: {ticket.description}
+            {/* Dropdown to change the ticket status */}
+            <select
+              value={ticket.status}
+              onChange={(e) => updateTicketStatus(ticket.id, e.target.value)}
+              className="ml-4 p-1 border rounded bg-white text-black"
+            >
+              <option value="open">Open</option>
+              <option value="pending">Pending</option>
+              <option value="in-progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+            </select>
           </li>
         ))}
       </ul>
