@@ -58,16 +58,22 @@ export default function Home() {
   }, [user])
 
   // Function to fetch all tickets from the Supabase database
+  // Fetch only tickets belonging to the current user
   const fetchTickets = async () => {
-    // Set loading to true while fetching data
     setLoading(true)
-    // Query the 'tickets' table to select all records
-    const { data, error } = await supabase.from('tickets').select('*').order('created_at', { ascending: false })
-    // Log any errors that occur during fetching
+    if (!user) {
+      setTickets([])
+      setLoading(false)
+      return
+    }
+    // Query the 'tickets' table for tickets where user_id matches the current user
+    const { data, error } = await supabase
+      .from('tickets')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
     if (error) console.error('Error fetching tickets:', error)
-    // Update the tickets state with the fetched data
     else setTickets(data)
-    // Set loading to false after fetching completes
     setLoading(false)
   }
 
