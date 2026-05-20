@@ -264,7 +264,8 @@ export default function Home() {
                         ))}
                       </select>
                     </label>
-                    <div className="flex items-center" style={{ marginLeft: '95px' }}>
+                    <div className="flex items-center relative" style={{ marginLeft: '95px' }}>
+                      <span className="absolute left-[-60px] w-12 text-right pr-2">Status:</span>
                       <select
                         value={ticket.status}
                         onChange={(e) => updateTicketStatus(ticket.id, e.target.value)}
