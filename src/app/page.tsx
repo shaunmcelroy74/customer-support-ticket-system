@@ -242,45 +242,48 @@ export default function Home() {
                 <li key={ticket.id} className="border p-3 mb-2 rounded shadow-sm">
                   <strong>{ticket.title}</strong>: {ticket.description}
                   {/* Show assigned user and allow changing */}
-                  <div className="mt-2 flex items-center">
-                    <span className="mr-2">Assigned to:</span>
-                    <select
-                      value={ticket.assigned_user_id || ''}
-                      onChange={async (e) => {
-                        setAssigningTicketId(ticket.id);
-                        const newUserId = e.target.value;
-                        const { error } = await supabase.from('tickets').update({ assigned_user_id: newUserId }).eq('id', ticket.id);
-                        await fetchTickets();
-                        setAssigningTicketId(null);
-                      }}
-                      className="p-1 border rounded bg-white text-black mr-4"
-                      disabled={assigningTicketId === ticket.id}
-                    >
-                      <option value="">Unassigned</option>
-                      {users.map(u => (
-                        <option key={u.id} value={u.id}>{u.email}</option>
-                      ))}
-                    </select>
-                    {/* Removed duplicate assigned user email display */}
+                  <div className="mt-2 flex flex-col items-start gap-2">
+                    <label className="flex items-center">
+                      <span className="mr-2">Assigned to:</span>
+                      <select
+                        value={ticket.assigned_user_id || ''}
+                        onChange={async (e) => {
+                          setAssigningTicketId(ticket.id);
+                          const newUserId = e.target.value;
+                          const { error } = await supabase.from('tickets').update({ assigned_user_id: newUserId }).eq('id', ticket.id);
+                          await fetchTickets();
+                          setAssigningTicketId(null);
+                        }}
+                        className="p-1 border rounded bg-white text-black"
+                        disabled={assigningTicketId === ticket.id}
+                        style={{ minWidth: '160px' }}
+                      >
+                        <option value="">Unassigned</option>
+                        {users.map(u => (
+                          <option key={u.id} value={u.id}>{u.email}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <div className="flex items-center" style={{ marginLeft: '95px' }}>
+                      <select
+                        value={ticket.status}
+                        onChange={(e) => updateTicketStatus(ticket.id, e.target.value)}
+                        className="p-1 border rounded bg-white text-black"
+                        style={{ minWidth: '160px' }}
+                      >
+                        <option value="open">Open</option>
+                        <option value="pending">Pending</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                      </select>
+                      <button
+                        onClick={() => deleteTicket(ticket.id)}
+                        className="ml-2 bg-red-500 text-white px-2 py-1 rounded"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                  {/* Dropdown to change the ticket status */}
-                  <select
-                    value={ticket.status}
-                    onChange={(e) => updateTicketStatus(ticket.id, e.target.value)}
-                    className="ml-4 p-1 border rounded bg-white text-black"
-                  >
-                    <option value="open">Open</option>
-                    <option value="pending">Pending</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="resolved">Resolved</option>
-                  </select>
-                  {/* Delete button to remove the ticket */}
-                  <button
-                    onClick={() => deleteTicket(ticket.id)}
-                    className="ml-2 bg-red-500 text-white px-2 py-1 rounded"
-                  >
-                    Delete
-                  </button>
                 </li>
               );
             })}
