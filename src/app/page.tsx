@@ -4,7 +4,10 @@
 import { supabase } from '../../supabaseClient'
 // Import React hooks for state management and side effects
 import { useState, useEffect } from 'react'
+
 import type { User } from '@supabase/supabase-js'
+
+
 
 // Define the structure of a Ticket object using TypeScript interface
 interface Ticket {
@@ -13,6 +16,7 @@ interface Ticket {
   description: string
   status: string
   created_at: string
+  assigned_user_id: string | null
 }
 
 // Main component for the home page of the customer support ticket system
@@ -32,6 +36,9 @@ export default function Home() {
   const [password, setPassword] = useState('')
   // State to toggle between login and signup modes
   const [isLogin, setIsLogin] = useState(true)
+  // State for users list and selected assignee
+  const [users, setUsers] = useState<{ id: string, email: string }[]>([])
+  const [assignedUserId, setAssignedUserId] = useState<string>('')
 
   // useEffect hook to handle authentication state changes
   useEffect(() => {
@@ -50,12 +57,19 @@ export default function Home() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // useEffect hook to fetch tickets when the user is logged in
+  // useEffect hook to fetch tickets and users when the user is logged in
   useEffect(() => {
     if (user) {
       fetchTickets()
+      fetchUsers()
     }
   }, [user])
+
+  // Fetch all users for assignment from the public profiles table
+  const fetchUsers = async () => {
+    const { data, error } = await supabase.from('profiles').select('id, email')
+    if (!error && data) setUsers(data)
+  }
 
   // Function to fetch all tickets from the Supabase database
   // Fetch only tickets belonging to the current user
@@ -79,16 +93,21 @@ export default function Home() {
 
   // Function to handle ticket creation form submission
   const createTicket = async (e: React.FormEvent<HTMLFormElement>) => {
-    // Prevent the default form submission behavior
     e.preventDefault()
-    // Insert a new ticket into the 'tickets' table with title, description, status, and user_id
-    const { data, error } = await supabase.from('tickets').insert([{ title, description, status: 'open', user_id: user?.id }])
-    // Log any errors that occur during insertion
+    const { data, error } = await supabase.from('tickets').insert([
+      {
+        title,
+        description,
+        status: 'open',
+        user_id: user?.id,
+        assigned_user_id: assignedUserId || null
+      }
+    ])
     if (error) console.error('Error creating ticket:', error)
-    // On success, clear the form inputs and refresh the ticket list
     else {
       setTitle('')
       setDescription('')
+      setAssignedUserId('')
       fetchTickets()
     }
   }
@@ -178,6 +197,18 @@ export default function Home() {
               className="border p-2 mr-2"
               required
             />
+            {/* Dropdown for assigning user by email */}
+            <select
+              value={assignedUserId}
+              onChange={e => setAssignedUserId(e.target.value)}
+              className="border p-2 mr-2 text-black bg-white"
+              required
+            >
+              <option value="">Assign to...</option>
+              {users.map(u => (
+                <option key={u.id} value={u.id}>{u.email}</option>
+              ))}
+            </select>
             {/* Submit button to create the ticket */}
             <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">Create Ticket</button>
           </form>
@@ -189,30 +220,53 @@ export default function Home() {
           {/* Unordered list to display all tickets */}
           <ul>
             {/* Map over the tickets array to render each ticket */}
-            {tickets.map((ticket) => (
-              <li key={ticket.id} className="border p-3 mb-2 rounded shadow-sm">
-                {/* Display ticket title in bold, followed by description */}
-                <strong>{ticket.title}</strong>: {ticket.description}
-                {/* Dropdown to change the ticket status */}
-                <select
-                  value={ticket.status}
-                  onChange={(e) => updateTicketStatus(ticket.id, e.target.value)}
-                  className="ml-4 p-1 border rounded bg-white text-black"
-                >
-                  <option value="open">Open</option>
-                  <option value="pending">Pending</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="resolved">Resolved</option>
-                </select>
-                {/* Delete button to remove the ticket */}
-                <button
-                  onClick={() => deleteTicket(ticket.id)}
-                  className="ml-2 bg-red-500 text-white px-2 py-1 rounded"
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
+            {tickets.map((ticket) => {
+              // Find the assigned user's email
+              const assignedUser = users.find(u => u.id === ticket.assigned_user_id);
+              return (
+                <li key={ticket.id} className="border p-3 mb-2 rounded shadow-sm">
+                  <strong>{ticket.title}</strong>: {ticket.description}
+                  {/* Show assigned user and allow changing */}
+                  <div className="mt-2 flex items-center">
+                    <span className="mr-2">Assigned to:</span>
+                    <select
+                      value={ticket.assigned_user_id || ''}
+                      onChange={async (e) => {
+                        const newUserId = e.target.value;
+                        const { error } = await supabase.from('tickets').update({ assigned_user_id: newUserId }).eq('id', ticket.id);
+                        if (!error) fetchTickets();
+                      }}
+                      className="p-1 border rounded bg-white text-black mr-4"
+                      style={{ color: '#000' }}
+                    >
+                      <option value="" style={{ color: '#000' }}>Unassigned</option>
+                      {users.map(u => (
+                        <option key={u.id} value={u.id} style={{ color: '#000' }}>{u.email}</option>
+                      ))}
+                    </select>
+                    {assignedUser && <span className="text-sm text-gray-600">({assignedUser.email})</span>}
+                  </div>
+                  {/* Dropdown to change the ticket status */}
+                  <select
+                    value={ticket.status}
+                    onChange={(e) => updateTicketStatus(ticket.id, e.target.value)}
+                    className="ml-4 p-1 border rounded bg-white text-black"
+                  >
+                    <option value="open">Open</option>
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
+                  {/* Delete button to remove the ticket */}
+                  <button
+                    onClick={() => deleteTicket(ticket.id)}
+                    className="ml-2 bg-red-500 text-white px-2 py-1 rounded"
+                  >
+                    Delete
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </>
       ) : (
