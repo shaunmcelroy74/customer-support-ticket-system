@@ -41,8 +41,37 @@ export default function Home() {
   // State for users list and selected assignee
   const [users, setUsers] = useState<{ id: string, email: string }[]>([])
   const [assignedUserId, setAssignedUserId] = useState<string>('')
+
   // Track which ticket is being assigned
   const [assigningTicketId, setAssigningTicketId] = useState<number | null>(null)
+
+
+  // State for notifications fetched from the database
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  // Fetch notifications for the signed-in user
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!user) {
+        setNotifications([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('read', false)
+        .order('created_at', { ascending: false });
+      if (!error && data) setNotifications(data);
+    };
+    fetchNotifications();
+  }, [user]);
+
+  // Mark notification as read (dismiss)
+  const dismissNotification = async (id: number) => {
+    await supabase.from('notifications').update({ read: true }).eq('id', id);
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
 
   // useEffect hook to handle authentication state changes
   useEffect(() => {
@@ -170,6 +199,26 @@ export default function Home() {
   return (
     // Main container with padding
     <main className="p-6">
+
+
+      {/* Assignment Notifications for signed-in user */}
+      {notifications.length > 0 && (
+        <div className="mb-4">
+          {notifications.map((n) => (
+            <div key={n.id} className="mb-2 p-3 bg-yellow-200 text-black border border-yellow-400 rounded flex items-center justify-between">
+              <span>{n.message}</span>
+              <button
+                onClick={() => dismissNotification(n.id)}
+                className="ml-4 px-2 py-1 bg-yellow-400 text-black rounded hover:bg-yellow-300"
+                aria-label="Close notification"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Page title */}
       <h1 className="text-2xl font-bold mb-4">Customer Support Ticket System</h1>
 
@@ -250,7 +299,28 @@ export default function Home() {
                         onChange={async (e) => {
                           setAssigningTicketId(ticket.id);
                           const newUserId = e.target.value;
-                          const { error } = await supabase.from('tickets').update({ assigned_user_id: newUserId }).eq('id', ticket.id);
+                          await supabase.from('tickets').update({ assigned_user_id: newUserId }).eq('id', ticket.id);
+                          // Insert notification for the assigned user
+                          if (newUserId) {
+                            await supabase.from('notifications').insert([
+                              {
+                                user_id: newUserId,
+                                ticket_id: ticket.id,
+                                message: `You have been assigned to ticket: ${ticket.title}`,
+                                read: false
+                              }
+                            ]);
+                            // Refetch notifications in case the assigned user is the current user
+                            if (user && user.id === newUserId) {
+                              const { data, error } = await supabase
+                                .from('notifications')
+                                .select('*')
+                                .eq('user_id', user.id)
+                                .eq('read', false)
+                                .order('created_at', { ascending: false });
+                              if (!error && data) setNotifications(data);
+                            }
+                          }
                           await fetchTickets();
                           setAssigningTicketId(null);
                         }}
