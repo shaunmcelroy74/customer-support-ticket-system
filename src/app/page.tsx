@@ -25,6 +25,8 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null)
   // State to hold the list of tickets fetched from the database
   const [tickets, setTickets] = useState<Ticket[]>([])
+  // State for ticket filter
+  const [ticketFilter, setTicketFilter] = useState<'all' | 'assigned' | 'created'>('created')
   // State for the title input in the ticket creation form
   const [title, setTitle] = useState('')
   // State for the description input in the ticket creation form
@@ -39,6 +41,8 @@ export default function Home() {
   // State for users list and selected assignee
   const [users, setUsers] = useState<{ id: string, email: string }[]>([])
   const [assignedUserId, setAssignedUserId] = useState<string>('')
+  // Track which ticket is being assigned
+  const [assigningTicketId, setAssigningTicketId] = useState<number | null>(null)
 
   // useEffect hook to handle authentication state changes
   useEffect(() => {
@@ -57,13 +61,13 @@ export default function Home() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // useEffect hook to fetch tickets and users when the user is logged in
+  // useEffect hook to fetch tickets and users when the user is logged in or filter changes
   useEffect(() => {
     if (user) {
       fetchTickets()
       fetchUsers()
     }
-  }, [user])
+  }, [user, ticketFilter])
 
   // Fetch all users for assignment from the public profiles table
   const fetchUsers = async () => {
@@ -71,8 +75,7 @@ export default function Home() {
     if (!error && data) setUsers(data)
   }
 
-  // Function to fetch all tickets from the Supabase database
-  // Fetch only tickets belonging to the current user
+  // Function to fetch tickets based on filter
   const fetchTickets = async () => {
     setLoading(true)
     if (!user) {
@@ -80,12 +83,13 @@ export default function Home() {
       setLoading(false)
       return
     }
-    // Query the 'tickets' table for tickets where user_id matches the current user
-    const { data, error } = await supabase
-      .from('tickets')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
+    let query = supabase.from('tickets').select('*').order('created_at', { ascending: false })
+    if (ticketFilter === 'created') {
+      query = query.eq('user_id', user.id)
+    } else if (ticketFilter === 'assigned') {
+      query = query.eq('assigned_user_id', user.id)
+    }
+    const { data, error } = await query
     if (error) console.error('Error fetching tickets:', error)
     else setTickets(data)
     setLoading(false)
@@ -213,8 +217,19 @@ export default function Home() {
             <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">Create Ticket</button>
           </form>
 
-          {/* Section header for the tickets list */}
-          <h2 className="text-xl font-semibold mb-2">Tickets</h2>
+          {/* Section header and filter for the tickets list */}
+          <div className="flex items-center mb-2">
+            <h2 className="text-xl font-semibold mr-4">Tickets</h2>
+            <select
+              value={ticketFilter}
+              onChange={e => setTicketFilter(e.target.value as 'all' | 'assigned' | 'created')}
+              className="border p-2 text-black bg-white"
+            >
+              <option value="all">All tickets</option>
+              <option value="assigned">Assigned to me</option>
+              <option value="created">Created by me</option>
+            </select>
+          </div>
           {/* Show loading message while fetching tickets */}
           {loading && <p>Loading...</p>}
           {/* Unordered list to display all tickets */}
@@ -232,19 +247,21 @@ export default function Home() {
                     <select
                       value={ticket.assigned_user_id || ''}
                       onChange={async (e) => {
+                        setAssigningTicketId(ticket.id);
                         const newUserId = e.target.value;
                         const { error } = await supabase.from('tickets').update({ assigned_user_id: newUserId }).eq('id', ticket.id);
-                        if (!error) fetchTickets();
+                        await fetchTickets();
+                        setAssigningTicketId(null);
                       }}
                       className="p-1 border rounded bg-white text-black mr-4"
-                      style={{ color: '#000' }}
+                      disabled={assigningTicketId === ticket.id}
                     >
-                      <option value="" style={{ color: '#000' }}>Unassigned</option>
+                      <option value="">Unassigned</option>
                       {users.map(u => (
-                        <option key={u.id} value={u.id} style={{ color: '#000' }}>{u.email}</option>
+                        <option key={u.id} value={u.id}>{u.email}</option>
                       ))}
                     </select>
-                    {assignedUser && <span className="text-sm text-gray-600">({assignedUser.email})</span>}
+                    {/* Removed duplicate assigned user email display */}
                   </div>
                   {/* Dropdown to change the ticket status */}
                   <select
