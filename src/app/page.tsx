@@ -36,8 +36,6 @@ export default function Home() {
   // State for auth form inputs
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  // State to toggle between login and signup modes
-  const [isLogin, setIsLogin] = useState(true)
   // State for users list and selected assignee
   const [users, setUsers] = useState<{ id: string, email: string }[]>([])
   const [assignedUserId, setAssignedUserId] = useState<string>('')
@@ -186,6 +184,12 @@ export default function Home() {
       setEmail('')
       setPassword('')
     }
+  }
+
+  const handleAuthSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null
+    if (submitter?.value === 'signup') handleSignup(e)
+    else handleLogin(e)
   }
 
   // Function to handle user logout
@@ -366,24 +370,8 @@ export default function Home() {
       ) : (
         // Authentication interface
         <>
-          {/* Toggle between login and signup */}
-          <div className="mb-4">
-            <button
-              onClick={() => setIsLogin(true)}
-              className={`mr-2 px-4 py-2 rounded border ${isLogin ? 'bg-blue-500 text-white' : 'bg-white text-black'}`}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => setIsLogin(false)}
-              className={`px-4 py-2 rounded border ${!isLogin ? 'bg-blue-500 text-white' : 'bg-white text-black'}`}
-            >
-              Signup
-            </button>
-          </div>
-
           {/* Auth form */}
-          <form onSubmit={isLogin ? handleLogin : handleSignup} className="mb-6 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
+          <form onSubmit={handleAuthSubmit} className="mb-6 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
             <input
               type="email"
               placeholder="Email"
@@ -400,8 +388,11 @@ export default function Home() {
               className="min-h-11 min-w-0 w-full rounded border bg-white p-2 text-black"
               required
             />
-            <button type="submit" className="min-h-11 w-full rounded border border-black bg-white px-4 py-2 text-black sm:col-span-2">
-              {isLogin ? 'Login' : 'Signup'}
+            <button type="submit" name="authAction" value="login" className="min-h-11 w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+              Login
+            </button>
+            <button type="submit" name="authAction" value="signup" className="min-h-11 w-full rounded border border-black bg-white px-4 py-2 text-black">
+              Signup
             </button>
           </form>
         </>
