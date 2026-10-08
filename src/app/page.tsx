@@ -198,15 +198,15 @@ export default function Home() {
   // Render the UI
   return (
     // Main container with padding
-    <main className="p-6">
+    <main className="mx-auto w-full max-w-6xl min-w-0 p-4 sm:p-6">
 
 
       {/* Assignment Notifications for signed-in user */}
       {notifications.length > 0 && (
         <div className="mb-4">
           {notifications.map((n) => (
-            <div key={n.id} className="mb-2 p-3 bg-yellow-200 text-black border border-yellow-400 rounded flex items-center justify-between">
-              <span>{n.message}</span>
+            <div key={n.id} className="mb-2 flex items-start justify-between gap-3 rounded border border-yellow-400 bg-yellow-200 p-3 text-black">
+              <span className="min-w-0 break-words">{n.message}</span>
               <button
                 onClick={() => dismissNotification(n.id)}
                 className="ml-4 px-2 py-1 bg-yellow-400 text-black rounded hover:bg-yellow-300"
@@ -220,41 +220,27 @@ export default function Home() {
       )}
 
       {/* Page title */}
-      <h1 className="text-2xl font-bold mb-4">Customer Support Ticket System</h1>
+      <h1 className="mb-4 break-words text-xl font-bold sm:text-2xl">Customer Support Ticket System</h1>
 
       {user ? (
         // Logged-in user interface
         <>
-          {/* Logout button */}
-          <button onClick={handleLogout} className="mb-4 bg-gray-500 text-white px-4 py-2 rounded">
-            Logout
-          </button>
-
           {/* Form for creating a new ticket */}
-          <form onSubmit={createTicket} className="mb-6">
+          <form onSubmit={createTicket} className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {/* Input for ticket title */}
             <input
               type="text"
               placeholder="Ticket Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="border p-2 mr-2"
-              required
-            />
-            {/* Input for ticket description */}
-            <input
-              type="text"
-              placeholder="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="border p-2 mr-2"
+              className="min-w-0 w-full rounded border p-2"
               required
             />
             {/* Dropdown for assigning user by email */}
             <select
               value={assignedUserId}
               onChange={e => setAssignedUserId(e.target.value)}
-              className="border p-2 mr-2 text-black bg-white"
+              className="min-w-0 w-full rounded border bg-white p-2 text-black"
               required
             >
               <option value="">Assign to...</option>
@@ -263,16 +249,30 @@ export default function Home() {
               ))}
             </select>
             {/* Submit button to create the ticket */}
-            <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">Create Ticket</button>
+            <button type="submit" className="min-h-11 w-full rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700">Create Ticket</button>
+            {/* Input for ticket description */}
+            <textarea
+              placeholder="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="min-w-0 w-full resize-y rounded border p-2 sm:col-span-2 lg:col-span-3"
+              required
+            />
           </form>
 
+          {/* Logout button */}
+          <button onClick={handleLogout} className="mb-6 rounded bg-gray-500 px-4 py-2 text-white">
+            Logout
+          </button>
+
           {/* Section header and filter for the tickets list */}
-          <div className="flex items-center mb-2">
-            <h2 className="text-xl font-semibold mr-4">Tickets</h2>
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-xl font-semibold">Tickets</h2>
             <select
               value={ticketFilter}
               onChange={e => setTicketFilter(e.target.value as 'all' | 'assigned' | 'created')}
-              className="border p-2 text-black bg-white"
+              className="min-h-11 w-full rounded border bg-white p-2 text-black sm:w-auto"
             >
               <option value="all">All tickets</option>
               <option value="assigned">Assigned to me</option>
@@ -288,12 +288,15 @@ export default function Home() {
               // Find the assigned user's email
               const assignedUser = users.find(u => u.id === ticket.assigned_user_id);
               return (
-                <li key={ticket.id} className="border p-3 mb-2 rounded shadow-sm">
-                  <strong>{ticket.title}</strong>: {ticket.description}
+                <li key={ticket.id} className="mb-3 min-w-0 rounded border p-3 shadow-sm">
+                  <div className="min-w-0 break-words">
+                    <strong>{ticket.title}</strong>
+                    <p className="mt-1 whitespace-pre-wrap">{ticket.description}</p>
+                  </div>
                   {/* Show assigned user and allow changing */}
-                  <div className="mt-2 flex flex-col items-start gap-2">
-                    <label className="flex items-center">
-                      <span className="mr-2">Assigned to:</span>
+                  <div className="mt-3 grid w-full grid-cols-1 gap-3 lg:grid-cols-2">
+                    <label className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center">
+                      <span className="shrink-0 sm:w-24">Assigned to:</span>
                       <select
                         value={ticket.assigned_user_id || ''}
                         onChange={async (e) => {
@@ -324,9 +327,8 @@ export default function Home() {
                           await fetchTickets();
                           setAssigningTicketId(null);
                         }}
-                        className="p-1 border rounded bg-white text-black"
+                        className="min-h-11 min-w-0 w-full rounded border bg-white p-2 text-black sm:flex-1"
                         disabled={assigningTicketId === ticket.id}
-                        style={{ minWidth: '160px' }}
                       >
                         <option value="">Unassigned</option>
                         {users.map(u => (
@@ -334,22 +336,23 @@ export default function Home() {
                         ))}
                       </select>
                     </label>
-                    <div className="flex items-center relative" style={{ marginLeft: '95px' }}>
-                      <span className="absolute left-[-60px] w-12 text-right pr-2">Status:</span>
+                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                      <label className="flex min-w-0 flex-col gap-1 sm:flex-1 sm:flex-row sm:items-center">
+                        <span className="shrink-0 sm:w-24">Status:</span>
                       <select
                         value={ticket.status}
                         onChange={(e) => updateTicketStatus(ticket.id, e.target.value)}
-                        className="p-1 border rounded bg-white text-black"
-                        style={{ minWidth: '160px' }}
+                        className="min-h-11 min-w-0 w-full rounded border bg-white p-2 text-black sm:flex-1"
                       >
                         <option value="open">Open</option>
                         <option value="pending">Pending</option>
                         <option value="in-progress">In Progress</option>
                         <option value="resolved">Resolved</option>
                       </select>
+                        </label>
                       <button
                         onClick={() => deleteTicket(ticket.id)}
-                        className="ml-2 bg-red-500 text-white px-2 py-1 rounded"
+                          className="min-h-11 rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
                       >
                         Delete
                       </button>
@@ -380,13 +383,13 @@ export default function Home() {
           </div>
 
           {/* Auth form */}
-          <form onSubmit={isLogin ? handleLogin : handleSignup} className="mb-6">
+          <form onSubmit={isLogin ? handleLogin : handleSignup} className="mb-6 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="border p-2 mr-2 bg-white text-black"
+              className="min-h-11 min-w-0 w-full rounded border bg-white p-2 text-black"
               required
             />
             <input
@@ -394,10 +397,10 @@ export default function Home() {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="border p-2 mr-2 bg-white text-black"
+              className="min-h-11 min-w-0 w-full rounded border bg-white p-2 text-black"
               required
             />
-            <button type="submit" className="bg-white text-black px-4 py-2 rounded border border-black">
+            <button type="submit" className="min-h-11 w-full rounded border border-black bg-white px-4 py-2 text-black sm:col-span-2">
               {isLogin ? 'Login' : 'Signup'}
             </button>
           </form>
